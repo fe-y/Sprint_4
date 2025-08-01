@@ -13,7 +13,6 @@ public class MainPage {
 
     private WebDriver driver;
 
-    // Локаторы
     private By upperOrderButton = By.xpath("//button[text()='Заказать']");
     private By lowerOrderButton = By.xpath("(//button[text()='Заказать'])[2]");
 
@@ -21,12 +20,19 @@ public class MainPage {
         this.driver = driver;
     }
 
-    
     public void clickQuestion(int index) {
-        acceptCookiesIfVisible(); // 💡 
+        acceptCookiesIfVisible();
         WebElement question = driver.findElement(By.id("accordion__heading-" + index));
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", question);
         question.click();
+    }
+
+    public String getAccordionAnswerText(int index) {
+        clickQuestion(index);
+        By answerLocator = By.id("accordion__panel-" + index);
+        new WebDriverWait(driver, Duration.ofSeconds(5))
+                .until(ExpectedConditions.visibilityOfElementLocated(answerLocator));
+        return driver.findElement(answerLocator).getText();
     }
 
     private void acceptCookiesIfVisible() {
@@ -38,11 +44,9 @@ public class MainPage {
                 .click();
     }
 
-
     public void clickLowerOrderButton() {
         new WebDriverWait(driver, Duration.ofSeconds(10))
                 .until(ExpectedConditions.elementToBeClickable(lowerOrderButton))
                 .click();
     }
 }
-
