@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import ru.praktikum.scooter.pageobjects.MainPage;
@@ -13,26 +14,29 @@ import ru.praktikum.scooter.pageobjects.RentPage;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 public class OrderScooterTest {
+
     private WebDriver driver;
-    private final String name;
-    private final String surname;
+
+    private final String firstName;
+    private final String lastName;
     private final String address;
     private final String phone;
 
-    public OrderScooterTest(String name, String surname, String address, String phone) {
-        this.name = name;
-        this.surname = surname;
+    public OrderScooterTest(String firstName, String lastName, String address, String phone) {
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.address = address;
         this.phone = phone;
     }
 
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name = "Test data: {0} {1}")
     public static Collection<Object[]> getTestData() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {"Анна", "Иванова", "ул. Ленина, 1", "89111112233"},
                 {"Пётр", "Сидоров", "ул. Пушкина, 5", "89222223344"},
         });
@@ -40,24 +44,63 @@ public class OrderScooterTest {
 
     @Before
     public void setUp() {
-        driver = new ChromeDriver(); // не headless — будто забыли
-        driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
-        driver.get("https://qa-scooter.praktikum-services.ru");
-    }
-
-    @Test
-    public void testOrderScooter() {
-        MainPage mainPage = new MainPage(driver);
-        mainPage.clickUpperOrderButton();
-
-        OrderPage orderPage = new OrderPage(driver);
-        orderPage.fillOrderForm(name, surname, address, phone);
-
-
+        driver = new ChromeDriver();
+        driver.get("https://qa-scooter.praktikum-services.ru/");
     }
 
     @After
     public void tearDown() {
-        driver.quit();
+        if(driver != null) {
+            driver.quit();
+        }
+    }
+
+    @Test
+    public void orderFromHeaderButton() {
+        MainPage mainPage = new MainPage(driver);
+        mainPage.clickQuestion();
+        mainPage.clickUpperOrderButton();
+
+        fillOrderForm();
+
+        RentPage rentPage = new RentPage(driver);
+        rentPage.setDate("05.08.2025");
+        rentPage.setRentalPeriod();
+        rentPage.selectColor();
+        rentPage.setComment("Позвонить за 10 минут");
+        rentPage.submitOrder();
+        rentPage.confirmOrder();
+
+        assertTrue("Заказ не оформлен", rentPage.isOrderConfirmed());
+    }
+
+    @Test
+    public void orderFromMiddleButton() {
+        MainPage mainPage = new MainPage(driver);
+        mainPage.clickQuestion();
+        mainPage.clickLowerOrderButton();
+
+        fillOrderForm();
+
+        RentPage rentPage = new RentPage(driver);
+        rentPage.setDate("15.08.2025");
+        rentPage.setRentalPeriod();
+        rentPage.selectColor();
+        rentPage.setComment("Проверка");
+        rentPage.submitOrder();
+        rentPage.confirmOrder();
+
+        assertTrue("Заказ не оформлен", rentPage.isOrderConfirmed());
+    }
+
+    private void fillOrderForm() {
+        OrderPage orderPage = new OrderPage(driver);
+
+        orderPage.setFirstName(firstName);
+        orderPage.setLastName(lastName);
+        orderPage.setAddress(address);
+        orderPage.setMetroStation("Тверская");  // Можно тоже параметризовать, если нужно
+        orderPage.setPhoneNumber(phone);
+        orderPage.clickNextButton();
     }
 }

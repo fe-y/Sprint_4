@@ -1,7 +1,6 @@
 package ru.praktikum.scooter.pageobjects;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -9,59 +8,75 @@ import java.time.Duration;
 
 public class RentPage {
 
-    private WebDriver driver;
+    private final WebDriver driver;
 
-    // Локаторы
-    private By dateInput = By.xpath("//input[@placeholder='* Когда привезти самокат']");
-    private By rentalPeriodDropdown = By.className("Dropdown-control");
-    private By rentalPeriodOption1Day = By.xpath("//div[text()='сутки']");
-    private By scooterColorBlack = By.id("black");
-    private By scooterColorGrey = By.id("grey");
-    private By commentField = By.xpath("//input[@placeholder='Комментарий для курьера']");
-    private By orderButton = By.xpath("//button[text()='Заказать']");
-    private By confirmOrderButton = By.xpath("//button[text()='Да']");
-    private By successMessage = By.xpath("//div[contains(text(),'Заказ оформлен')]");
+    private final By dateInput = By.xpath("//input[@placeholder='* Когда привезти самокат']");
+    private final By rentalPeriodDropdown = By.className("Dropdown-control");
+    private final By rentalPeriodOption = By.xpath("//div[@class='Dropdown-option' and text()='двое суток']");
+    private final By colorCheckbox = By.id("black");
+    private final By commentInput = By.xpath("//input[@placeholder='Комментарий для курьера']");
+    private final By orderButton = By.xpath("//div[@class='Order_Buttons__1xGrp']/button[text()='Заказать']");
+    private final By confirmYesButton = By.xpath("//button[text()='Да']");
+    private final By orderConfirmationModalHeader = By.className("Order_ModalHeader__3FDaJ");
+    private final By orderConfirmationModal = By.className("Order_Modal__Y0Vsz");
 
     public RentPage(WebDriver driver) {
         this.driver = driver;
     }
 
-    public void setDeliveryDate(String date) {
-        driver.findElement(dateInput).sendKeys(date);
+    public void setDate(String date) {
+        WebElement input = driver.findElement(dateInput);
+        input.clear();
+        input.sendKeys(date);
+        input.sendKeys(Keys.ENTER);
     }
 
-    public void chooseRentalPeriodOneDay() {
+    public void setRentalPeriod() {
         driver.findElement(rentalPeriodDropdown).click();
         new WebDriverWait(driver, Duration.ofSeconds(5))
-                .until(ExpectedConditions.elementToBeClickable(rentalPeriodOption1Day))
-                .click();
+                .until(ExpectedConditions.elementToBeClickable(rentalPeriodOption)).click();
     }
 
-    public void selectColorBlack() {
-        driver.findElement(scooterColorBlack).click();
+    public void selectColor() {
+        driver.findElement(colorCheckbox).click();
     }
 
-    public void selectColorGrey() {
-        driver.findElement(scooterColorGrey).click();
+    public void setComment(String comment) {
+        driver.findElement(commentInput).sendKeys(comment);
     }
 
-    public void enterComment(String comment) {
-        driver.findElement(commentField).sendKeys(comment);
-    }
-
-    public void clickOrderButton() {
+    public void submitOrder() {
         driver.findElement(orderButton).click();
     }
 
     public void confirmOrder() {
-        new WebDriverWait(driver, Duration.ofSeconds(5))
-                .until(ExpectedConditions.elementToBeClickable(confirmOrderButton))
+        new WebDriverWait(driver, Duration.ofSeconds(10))
+                .until(ExpectedConditions.elementToBeClickable(confirmYesButton))
                 .click();
     }
 
-    public boolean isOrderConfirmed() {
-        return new WebDriverWait(driver, Duration.ofSeconds(5))
-                .until(ExpectedConditions.visibilityOfElementLocated(successMessage))
-                .isDisplayed();
+    public String getOrderConfirmationText() {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+            WebElement modalHeader = wait.until(ExpectedConditions.visibilityOfElementLocated(orderConfirmationModalHeader));
+            return modalHeader.getText();
+        } catch (TimeoutException e) {
+            return "";
+        }
     }
+
+    public boolean isOrderConfirmed() {
+        try {
+            return new WebDriverWait(driver, Duration.ofSeconds(10))
+                    .until(ExpectedConditions.visibilityOfElementLocated(orderConfirmationModal))
+                    .isDisplayed();
+        } catch (TimeoutException e) {
+            System.err.println("Окно подтверждения заказа не появилось (баг в Chrome).");
+            return false;
+        }
+    }
+    public String getOrderSuccessMessage() {
+        return driver.findElement(By.className("Order_ModalHeader__3FDaJ")).getText();
+    }
+
 }

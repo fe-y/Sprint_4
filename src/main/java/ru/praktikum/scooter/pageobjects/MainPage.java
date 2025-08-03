@@ -49,4 +49,7 @@ public class MainPage {
                 .until(ExpectedConditions.elementToBeClickable(lowerOrderButton))
                 .click();
     }
+
+    public void clickQuestion() {
+    }
 }
